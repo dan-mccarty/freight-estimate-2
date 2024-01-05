@@ -27,8 +27,8 @@ app.use(cors(corsOptions)) // INCLUDE cors
 // === ROUTES ===
 
 app.use('/', require('./routes/testRoutes.js'))
-app.use('/unleashed', require('./routes/unleashedRoutes.js'))
-app.use('/freightmate', require('./routes/freightmateRoutes.js'))
+app.use('/api/unleashed', require('./routes/unleashedRoutes.js'))
+app.use('/api/freightmate', require('./routes/freightmateRoutes.js'))
 // app.use('/PATH/__', require('./routes/__Routes.js'))
 // app.use('/PATH/__', require('./routes/__Routes.js'))
 

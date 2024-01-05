@@ -83,7 +83,7 @@ export async function getFreightmateOffers(details, consignmentItems) {
     let senderAddressId = isSolarBox ? ADDRESS_ID_SOLARBOX : ADDRESS_ID_DPA
     let deliveryAddressId = details['addressId']
 
-    const url = 'http://localhost:3000/freightmate/offers/'
+    const url = 'http://localhost:3000/api/freightmate/offers/'
 
     const items = consignmentItems.map(item => {
         return {

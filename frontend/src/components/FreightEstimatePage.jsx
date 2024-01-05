@@ -74,7 +74,7 @@ const FreightEstimatePage = () => {
             console.log({ suburb })
             console.log({ postcode })
 
-            let url = `http://localhost:3000/freightmate/suburb/${suburb}`
+            let url = `http://localhost:3000/api/freightmate/suburb/${suburb}`
 
             axios.get(url).then(resp => {
 
@@ -190,7 +190,7 @@ const FreightEstimatePage = () => {
         setCanGetOffers(false)
 
         if (isValid) {
-            const endpoint = `http://localhost:3000/unleashed/orders/${searchValue.current}/data`
+            const endpoint = `http://localhost:3000/api/unleashed/orders/${searchValue.current}/data`
 
             axios.get(endpoint).then(response => {
                 const data = response.data
@@ -265,7 +265,7 @@ const FreightEstimatePage = () => {
 
         console.log('createFreightmateAddress')
 
-        const url = 'http://localhost:3000/freightmate/address/'
+        const url = 'http://localhost:3000/api/freightmate/address/'
         // const url = '/freightmate/address/'
 
         // ...
@@ -338,7 +338,7 @@ const FreightEstimatePage = () => {
 
     const getOffers = () => {
 
-        const endpoint = `http://localhost:3000/freightmate/offers/`
+        const endpoint = `http://localhost:3000/api/freightmate/offers/`
 
         getAllOffers(details, consignmentItems).then(offers => {
             console.log({ offers })
