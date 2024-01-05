@@ -21,10 +21,10 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import { getAllOffers } from '../functions/offers';
-import { packageOptions } from '../functions/constants';
+import { BASE_URL, packageOptions } from '../functions/constants';
 
 import { calculatePackages } from '../functions/packingAlgoithm';
-import { priceFormatOffers, stateFromPostcode } from '../functions/general';
+import { stateFromPostcode } from '../functions/general';
 
 import ConsignmentItemRow from './ConsignmentItemRow';
 import OffersTable from './OffersTable';
@@ -74,7 +74,7 @@ const FreightEstimatePage = () => {
             console.log({ suburb })
             console.log({ postcode })
 
-            let url = `http://localhost:3000/api/freightmate/suburb/${suburb}`
+            let url = `${BASE_URL}/api/freightmate/suburb/${suburb}`
 
             axios.get(url).then(resp => {
 
@@ -190,7 +190,7 @@ const FreightEstimatePage = () => {
         setCanGetOffers(false)
 
         if (isValid) {
-            const endpoint = `http://localhost:3000/api/unleashed/orders/${searchValue.current}/data`
+            const endpoint = `${BASE_URL}/api/unleashed/orders/${searchValue.current}/data`
 
             axios.get(endpoint).then(response => {
                 const data = response.data
@@ -265,7 +265,7 @@ const FreightEstimatePage = () => {
 
         console.log('createFreightmateAddress')
 
-        const url = 'http://localhost:3000/api/freightmate/address/'
+        const url = `${BASE_URL}/api/freightmate/address/`
         // const url = '/freightmate/address/'
 
         // ...
@@ -338,7 +338,7 @@ const FreightEstimatePage = () => {
 
     const getOffers = () => {
 
-        const endpoint = `http://localhost:3000/api/freightmate/offers/`
+        const endpoint = `${BASE_URL}/api/freightmate/offers/`
 
         getAllOffers(details, consignmentItems).then(offers => {
             console.log({ offers })

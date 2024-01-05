@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getRates } from "./starshipit";
-import { ADDRESS_ID_DPA, ADDRESS_ID_SOLARBOX } from './constants';
+import { ADDRESS_ID_DPA, ADDRESS_ID_SOLARBOX, BASE_URL } from './constants';
 
 export async function getStarshipitOffers(details, consignmentItems) {
 
@@ -70,6 +70,8 @@ export async function getStarshipitOffers(details, consignmentItems) {
 
 }
 
+
+
 export async function getFreightmateOffers(details, consignmentItems) {
 
     // GET FREIGHTMATE OFFERS
@@ -83,7 +85,7 @@ export async function getFreightmateOffers(details, consignmentItems) {
     let senderAddressId = isSolarBox ? ADDRESS_ID_SOLARBOX : ADDRESS_ID_DPA
     let deliveryAddressId = details['addressId']
 
-    const url = 'http://localhost:3000/api/freightmate/offers/'
+    const url = `${BASE_URL}/api/freightmate/offers/`
 
     const items = consignmentItems.map(item => {
         return {
