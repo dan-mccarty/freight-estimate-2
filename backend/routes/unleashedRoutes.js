@@ -8,12 +8,14 @@ const router = express.Router();
 
 const { 
     getShipments,
-    getSalesOrder
+    getSalesOrder,
+    getSalesQuote
 } = require('../helpers/unleashedHelpers');
 
 const { 
     getShipmentData, 
-    getOrderData 
+    getOrderData, 
+    getQuoteData
 } = require('../helpers/unleashedCompliledRequests');
 
 
@@ -73,6 +75,35 @@ router.get('/orders/:orderNumber/data', async (req, res) => {
         res.status(400).json({ error: error.message })
     }
 })
+
+
+
+// ==== SALES QUOTES ====
+
+router.get('/quotes/:quoteNumber', async (req, res) => {
+    const { quoteNumber } = req.params
+    
+    try {
+        const salesQuote = await getSalesQuote(quoteNumber)
+        res.status(200).json(salesQuote)
+    } catch (error) {
+        res.status(400).json({ error: error.message })
+    }
+})
+
+router.get('/quotes/:quoteNumber/data', async (req, res) => {
+    const { quoteNumber } = req.params
+    
+    try {
+        const quoteData = await getQuoteData(quoteNumber)
+        res.status(200).json(quoteData)
+    } catch (error) {
+        res.status(400).json({ error: error.message })
+    }
+})
+
+
+
 
 
 module.exports = router;

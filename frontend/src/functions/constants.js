@@ -182,5 +182,5 @@ export const ADDRESS_ID_DPA = 485807;
 export const ADDRESS_ID_SOLARBOX = 485809;
 
 
-export const PRODUCTION = true;
+export const PRODUCTION = false;
 export const BASE_URL = PRODUCTION ? 'http://dpa.tools' : 'http://localhost:3000'

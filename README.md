@@ -10,4 +10,4 @@ npm run build
 
 cd ..
 
-npm start server
+pm2 start backend/server.js

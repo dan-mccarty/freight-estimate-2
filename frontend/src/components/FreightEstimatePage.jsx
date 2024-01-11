@@ -50,6 +50,7 @@ const FreightEstimatePage = () => {
     const [offersLoading, setOffersLoading] = useState(false)
     const [canGetOffers, setCanGetOffers ] = useState(false)
 
+
     const handleSetSuburb = (id, suburb, state, postcode) => {
         console.log('handleSetSuburb: ', id, suburb, state, postcode)
 
@@ -121,7 +122,6 @@ const FreightEstimatePage = () => {
 
     }, [loaded])
 
-
     useEffect(() => {
         
         if ((loaded) && (details.addressId!==null)) {
@@ -134,7 +134,6 @@ const FreightEstimatePage = () => {
             return () => clearTimeout(delayDebounceFn)
         }
     }, [consignmentItems])
-
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
@@ -370,7 +369,14 @@ const FreightEstimatePage = () => {
                 <Grid container rowSpacing={2} columnSpacing={2}>
 
                     <Grid xs={5}>
-                        <TextField size='large' fullWidth label={'Quote / Order number'} variant='outlined' value={searchInput} onChange={handleModifySearch} />
+                        <TextField 
+                            className='loadable'
+                            size='large' 
+                            fullWidth 
+                            label={'Quote / Order number'} 
+                            variant='outlined' 
+                            value={searchInput} 
+                            onChange={handleModifySearch} />
                     </Grid>
 
                     <Grid xs={5} sx={{ marginTop: '0.5rem' }}>
@@ -380,8 +386,8 @@ const FreightEstimatePage = () => {
                                 name="controlled-radio-buttons-group"
                                 value={searchType}
                                 onChange={handleChange}>
-                                <FormControlLabel value="quote" control={<Radio />} label="Quote" disabled />
-                                <FormControlLabel value="order" control={<Radio />} label="Sales Order" />
+                                <FormControlLabel className='loadable' value="quote" control={<Radio />} label="Quote" disabled />
+                                <FormControlLabel className='loadable' value="order" control={<Radio />} label="Sales Order" />
                             </RadioGroup>
                         </FormControl>
                     </Grid>

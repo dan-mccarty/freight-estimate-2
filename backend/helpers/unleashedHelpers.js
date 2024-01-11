@@ -45,6 +45,13 @@ const getResponse = async (endpoint, params = {}) => {
 // ==== COMMON REQUESTS ====
 
 
+const getSalesQuote = async (quoteNumber) => {
+    const endpoint = 'SalesQuotes'
+    const params = { 'quoteNumber': quoteNumber }
+    let order = await getResponse(endpoint, params).then(data => data['Items'][0])
+    return order
+}
+
 const getSalesOrder = async (orderNumber) => {
     const endpoint = 'SalesOrders'
     const params = { 'OrderNumber': orderNumber }
@@ -86,6 +93,7 @@ const getContact = async (customerGuid, contactGuid) => {
 
 module.exports = {
     getResponse,
+    getSalesQuote,
     getSalesOrder,
     getProduct,
     getContact,

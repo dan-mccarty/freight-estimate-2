@@ -3,10 +3,10 @@ const axios = require('axios');
 const CryptoJS = require('crypto-js')
 
 const {
+    getSalesQuote,
     getSalesOrder,
     getProduct,
     getContact,
-    getShipment
 } = require('./unleashedHelpers')
 
 
@@ -97,7 +97,7 @@ const getProductLines = async (lines) => {
             
             const shipmentQty = lineItem['ShipmentQty']
             const orderQuantity = lineItem['OrderQuantity']
-            const quoteQuantity = "QUOTE QUANTITY" // quote ??
+            const quoteQuantity = lineItem['QuoteQuantity'] // quote ??
             const quantity = shipmentQty ? shipmentQty : orderQuantity ? orderQuantity : quoteQuantity
             
             const isDG = (productGroup === "Batteries - Lithium")
@@ -114,13 +114,154 @@ const getProductLines = async (lines) => {
     return productLines
 }
 
+const getQuoteData = async (quoteNumber) =>  {
+    console.log('getQuoteData')
+    
+    let quote = await getSalesQuote(quoteNumber)
 
-const getQuoteData = async (quoteNumber) => {
-    // console.log('getQuoteData')
+    console.log({quote})
+    
+    let charges = []
+    let quoteLines = [] 
+    
+    quote['SalesQuoteLines'].forEach(line => {
+        if (line.LineType === 'Charge') {
+            charges.push({
+                description: line['ProductDescription'],
+                price: line['UnitPrice'],
+                quantity: line['OrderQuantity'],
+                xeroAccount: line['XeroSalesAccount']
+            })
+        } else {
+            quoteLines.push(line)
+        }
+    })
+
+    let freightCharge = 0
+    quote['SalesQuoteLines'].forEach(lineItem => {
+        if (lineItem['LineType'] === 'Charge') {
+            if (lineItem['XeroSalesAccount'] === '45000') {
+                freightCharge+=(lineItem['UnitPrice'] * ( 1 + lineItem['TaxRate'] ))
+            }
+        }
+    })
+    freightCharge = Number(freightCharge.toFixed(2))
+    
+    const productLines = await getProductLines(quoteLines)
+
+    const deliveryMethod = quote['DeliveryMethod'] //: 'Road Freight',
+    const deliveryInstruction = quote['DeliveryInstruction'] // : 'DO NOT SHIP - NOT A REAL ORDER',
+
+    const dontShipMethods = [
+        null,
+        'Local Pick Up',
+        'Hand Delivery',
+        'Customer Freight',
+    ]
+    
+    const canShip = (!(dontShipMethods.includes(deliveryMethod)))
+    // let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
+
+
+    //
+    const companyName = quote['Customer']['CustomerName']
+    const customerRef = quote['CustomerRef']
+    const comments = quote['Comments']
+
+    //     
+    let contactFirstName;
+    let contactLastName;
+    let contactMobilePhone;
+    let contactPhoneNumber;
+    let contactEmailAddress;
+
+    const customerGuid = quote['Customer']['Guid']
+    const deliveryContact = quote['DeliveryContact']
+    
+    if (deliveryContact !== null) {
+        let contactGuid = quote['DeliveryContact']['Guid']
+        let contact = await getContact(customerGuid, contactGuid)
+
+        contactFirstName = contact.firstName
+        contactLastName = contact.lastName
+        contactMobilePhone = contact.mobilePhone
+        contactPhoneNumber = contact.phoneNumber
+        contactEmailAddress = contact.emailAddress
+    }
+
+    const contactFullName = `${contactFirstName} ${contactLastName}`.replace('null', '').trim()
+    const contactPrimaryPhone = (contactMobilePhone !== null)
+        ? contactMobilePhone
+        : (contactPhoneNumber !== null)
+            ? contactPhoneNumber
+            : '';
+
+    // 
+    const deliveryStreetAddress = quote['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
+    const deliveryStreetAddress2 = quote['DeliveryStreetAddress2'] // : null,
+
+    const suburb = quote['DeliverySuburb'] // : 'Port Melbourne',
+    const city = quote['DeliveryCity'] // : 'Port Melbourne',
+    const deliverySuburb = (suburb !== null) ? suburb : city
+    const deliveryState = quote['DeliveryRegion'] // : 'Victoria',
+    const deliveryPostCode = quote['DeliveryPostCode'] // : '3207',
+    const deliveryCountry = quote['DeliveryCountry'] // : 'Australia',
+
+    let subTotal = quote['SubTotal'] //: 338.37,
+
+    // 
+    let salesPerson = quote['SalesPerson']
+    let salesPersonName;
+    let salesPersonEmail;
+    if (salesPerson!==null) {
+        salesPersonName = salesPerson['FullName'] // : 'Andrew Wilson',
+        salesPersonEmail = salesPerson['Email'] // 'andrew@dpasolar.com.au',
+    }
+
+    let data = { ...defaultData }
+
+    // data['quoteNumber']             = quoteNumber;
+    data['orderNumber']             = quoteNumber;
+    
+    data['companyName']             = companyName;
+    data['customerRef']             = customerRef;
+    data['comments']                = comments;
+    
+    data['contactFullName']         = contactFullName;
+    data['contactEmailAddress']     = contactEmailAddress;
+    data['contactPrimaryPhone']     = contactPrimaryPhone;
+    // data['contactPhoneNumber']      = contactPhoneNumber;
+    // data['contactMobilePhone']      = contactMobilePhone;
+    
+    data['salesPersonName']         = salesPersonName
+    data['salesPersonEmail']        = salesPersonEmail
+
+    data['deliveryMethod']          = deliveryMethod;
+    data['deliveryInstruction']     = deliveryInstruction;
+    
+    data['deliveryStreetAddress']   = deliveryStreetAddress;
+    data['deliveryStreetAddress2']  = deliveryStreetAddress2;
+    data['deliverySuburb']          = deliverySuburb;
+    data['deliveryState']           = deliveryState;
+    data['deliveryPostCode']        = deliveryPostCode;
+    data['deliveryCountry']         = deliveryCountry;
+    
+    data['canShip']                 = canShip;
+    data['requireResidential']      = false;
+    data['requireTailGate']         = false;
+    data['requireSignature']        = true;
+
+    // data['canStarShipIt'] = canStarShipIt;
+    data['productLines']            = productLines;
+    data['charges']                 = charges;
+    data['freightCharge']           = freightCharge;
+    data['subTotal']                = subTotal;
+    
+    data['offers'] = null
+
+    return data;
 
 }
-
-
 
 const getOrderData = async (orderNumber) =>  {
     console.log('getOrderData')
@@ -269,7 +410,6 @@ const getOrderData = async (orderNumber) =>  {
     return data;
 
 }
-
 
 const getShipmentData = async (shipment)  => {
     // console.log('getData')
@@ -463,6 +603,7 @@ const getShipmentData = async (shipment)  => {
 
 module.exports = {
     getProductLines,
+    getQuoteData,
     getOrderData,
     getShipmentData
 }
