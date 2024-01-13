@@ -1,0 +1,59 @@
+### REGISTER NEW USER
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "username": "daniel", 
+    "password": "test123",
+    "role": "warehouse",
+    "active": true
+}
+
+
+### LOGIN
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "daniel", 
+    "password": "test123"
+}
+
+### REFRESH
+POST http://localhost:3000/api/auth/refresh
+Content-Type: application/json
+
+{
+    "username": "daniel", 
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzYWQwNTNmM2YwNmVhNzk0MzdmZCIsInVzZXJuYW1lIjoiZGFuaWVsIiwicm9sZSI6IndhcmVob3VzZSIsImlhdCI6MTcwNTEzMzY1MCwiZXhwIjoxNzA1MTYyNDUwfQ.4OOw0MxtvSnV17fqoZ-aiV4ygP96fXVRdE8A3xO9lBc"
+}
+
+
+### LIST ALL USERS
+GET http://localhost:3000/api/auth/users
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzYWQwNTNmM2YwNmVhNzk0MzdmZCIsInVzZXJuYW1lIjoiZGFuaWVsIiwicm9sZSI6IndhcmVob3VzZSIsImlhdCI6MTcwNTEzMzY4MiwiZXhwIjoxNzA1MTMzNjk3fQ.tRtgrgCcGRY0Ob-KgwAB2OcE8dz-XIvMtvs59M1-UNo
+
+
+### DELETE ALL USERS
+GET http://localhost:3000/api/auth/users/delete/all
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzNTFkYTJmMjEzYzJkNjNhNzI1OSIsInVzZXJuYW1lIjoidG9ueSIsInJvbGUiOiJ3YXJlaG91c2UiLCJpYXQiOjE3MDUxMzA2MDIsImV4cCI6MTcwNTEzMDY2Mn0.67qK8PBnay5QrZIC56SXlZVJyxhX9RYAxxXCf4NVr9U
+
+
+### ALL POSTS (AUTH REQUIRED)
+GET http://localhost:3000/posts/all
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzYWQwNTNmM2YwNmVhNzk0MzdmZCIsInVzZXJuYW1lIjoiZGFuaWVsIiwicm9sZSI6IndhcmVob3VzZSIsImlhdCI6MTcwNTEzMDcwOSwiZXhwIjoxNzA1MTMwNzY5fQ.OBPySI4W8It1yGMzcH74DsU0XklxQqkCo8BsfQYMG80
+
+
+### POSTS FOR USER (AUTH REQUIRED)
+GET http://localhost:3000/posts
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzYWQwNTNmM2YwNmVhNzk0MzdmZCIsInVzZXJuYW1lIjoiZGFuaWVsIiwicm9sZSI6IndhcmVob3VzZSIsImlhdCI6MTcwNTEzMDcwOSwiZXhwIjoxNzA1MTMwNzY5fQ.OBPySI4W8It1yGMzcH74DsU0XklxQqkCo8BsfQYMG80
+
+
+### POSTS FOR ROLE (AUTH REQUIRED)
+GET http://localhost:3000/posts/role
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YTIzYWQwNTNmM2YwNmVhNzk0MzdmZCIsInVzZXJuYW1lIjoiZGFuaWVsIiwicm9sZSI6IndhcmVob3VzZSIsImlhdCI6MTcwNTEzMDcwOSwiZXhwIjoxNzA1MTMwNzY5fQ.OBPySI4W8It1yGMzcH74DsU0XklxQqkCo8BsfQYMG80
