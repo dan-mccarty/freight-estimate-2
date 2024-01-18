@@ -78,6 +78,7 @@ const getProductLines = async (lines) => {
     for (let i = 0; i < lines.length; i++) {
         let lineItem = lines[i]
 
+        console.log({Product: lineItem['Product']})
         const productGuid = lineItem['Product']['Guid']
 
         try {
@@ -175,10 +176,15 @@ const getQuoteData = async (quoteNumber) =>  {
     let contactPhoneNumber;
     let contactEmailAddress;
 
+    console.log({Customer: quote['Customer']})
     const customerGuid = quote['Customer']['Guid']
+    
     const deliveryContact = quote['DeliveryContact']
     
-    if (deliveryContact !== null) {
+    // if (!(deliveryContact === null || deliveryContact === undefined)) {
+    if (deliveryContact) {
+        console.log('')
+        console.log({DeliveryContact: quote['DeliveryContact']})
         let contactGuid = quote['DeliveryContact']['Guid']
         let contact = await getContact(customerGuid, contactGuid)
 
@@ -197,12 +203,23 @@ const getQuoteData = async (quoteNumber) =>  {
             : '';
 
     // 
-    const deliveryStreetAddress = quote['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
-    const deliveryStreetAddress2 = quote['DeliveryStreetAddress2'] // : null,
+    let deliveryStreetAddress = quote['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
+    deliveryStreetAddress = deliveryStreetAddress
+                                ? deliveryStreetAddress.replace(',', '').trim()
+                                : deliveryStreetAddress
+
+    let deliveryStreetAddress2 = quote['DeliveryStreetAddress2'] // : null,
+    deliveryStreetAddress2 = deliveryStreetAddress2
+                                ? deliveryStreetAddress2.replace(',', '').trim()
+                                : deliveryStreetAddress2
 
     const suburb = quote['DeliverySuburb'] // : 'Port Melbourne',
     const city = quote['DeliveryCity'] // : 'Port Melbourne',
-    const deliverySuburb = (suburb !== null) ? suburb : city
+    let deliverySuburb = (suburb !== null) ? suburb : city
+    deliverySuburb = deliverySuburb 
+                        ? deliverySuburb.replace(',', '').trim()
+                        : deliverySuburb
+
     const deliveryState = quote['DeliveryRegion'] // : 'Victoria',
     const deliveryPostCode = quote['DeliveryPostCode'] // : '3207',
     const deliveryCountry = quote['DeliveryCountry'] // : 'Australia',
@@ -346,12 +363,23 @@ const getOrderData = async (orderNumber) =>  {
             : '';
 
     // 
-    const deliveryStreetAddress = order['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
-    const deliveryStreetAddress2 = order['DeliveryStreetAddress2'] // : null,
+    let deliveryStreetAddress = order['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
+    deliveryStreetAddress = deliveryStreetAddress
+                                ? deliveryStreetAddress.replace(',', '').trim()
+                                : deliveryStreetAddress
+
+    let deliveryStreetAddress2 = order['DeliveryStreetAddress2'] // : null,
+    deliveryStreetAddress2 = deliveryStreetAddress2
+                                ? deliveryStreetAddress2.replace(',', '').trim()
+                                : deliveryStreetAddress2
 
     const suburb = order['DeliverySuburb'] // : 'Port Melbourne',
     const city = order['DeliveryCity'] // : 'Port Melbourne',
-    const deliverySuburb = (suburb !== null) ? suburb : city
+    let deliverySuburb = (suburb !== null) ? suburb : city
+    deliverySuburb = deliverySuburb 
+                        ? deliverySuburb.replace(',', '').trim()
+                        : deliverySuburb
+
     const deliveryState = order['DeliveryRegion'] // : 'Victoria',
     const deliveryPostCode = order['DeliveryPostCode'] // : '3207',
     const deliveryCountry = order['DeliveryCountry'] // : 'Australia',

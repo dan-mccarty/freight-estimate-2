@@ -12,6 +12,8 @@ const DEFAULT_PALLET_DEPTH = 80 // cm
 const DEFAULT_PALLET_HEIGHT = 15 // cm
 const DEFAULT_PALLET_WEIGHT = 20 // kg
 
+const MAX_PALLET_HEIGHT = 160 // cm
+
 const DEFAULT_EMPTY_SPACE = 0.4 // % of space not used
 const DEFAULT_USABLE_SPACE = 1 - DEFAULT_EMPTY_SPACE // // % of space used
 
@@ -244,7 +246,7 @@ export function calculatePackages(order) {
         
         let totalRemainingVolume = dangerousGoodsVolume + remainingVolume
 
-        let palletHeight = ceilN((DEFAULT_PALLET_HEIGHT + (totalRemainingVolume / DEFAULT_PALLET_AREA)), 5) // ... this should return height in cm
+        let totalHeight = ceilN((DEFAULT_PALLET_HEIGHT + (totalRemainingVolume / DEFAULT_PALLET_AREA)), 5) // ... this should return height in cm
         
         
         console.log({remainingItems2})
@@ -253,19 +255,61 @@ export function calculatePackages(order) {
         console.log({DEFAULT_PALLET_AREA})
         
         // TODO: cap pallet height before adding to new consignmentItem
-        console.log({palletHeight})
+        let palletQty = Math.floor(totalHeight / MAX_PALLET_HEIGHT)  
 
-        consignmentItems.push({
-            quantity: 1,
-            name: 'Pallet',
-            width: DEFAULT_PALLET_WIDTH,
-            depth: DEFAULT_PALLET_DEPTH,
-            height: palletHeight,
-            weight: ceilN((DEFAULT_PALLET_WEIGHT + remainingWeight + dangerousGoodsWeight), 5),
-            type: 'Pallet',
-            isDG: Boolean(dangerousGoods.length),
-            dgWeight: dangerousGoodsWeight
-        })
+
+        if (palletQty>1) {
+
+            const totalWeight = remainingWeight + dangerousGoodsWeight
+            const ratioHeightWeight = totalWeight / totalHeight
+            const ratioDgWeight = dangerousGoodsWeight / totalHeight
+            
+            consignmentItems.push({
+                quantity: palletQty,
+                name: 'Pallet',
+                width: DEFAULT_PALLET_WIDTH,
+                depth: DEFAULT_PALLET_DEPTH,
+                height: MAX_PALLET_HEIGHT,
+                weight: ceilN((DEFAULT_PALLET_WEIGHT + ( MAX_PALLET_HEIGHT * ratioHeightWeight)), 5),
+                type: 'Pallet',
+                isDG: Boolean(dangerousGoods.length),
+                dgWeight: MAX_PALLET_HEIGHT * ratioDgWeight
+            })
+            
+            const remainingHeight = totalHeight % MAX_PALLET_HEIGHT
+            const remainingTotalWeight = totalWeight - ( remainingHeight * ratioHeightWeight )
+            const remainingDgWeight = dangerousGoodsWeight - ( remainingHeight * ratioDgWeight )
+
+            consignmentItems.push({
+                quantity: 1,
+                name: 'Pallet',
+                width: DEFAULT_PALLET_WIDTH,
+                depth: DEFAULT_PALLET_DEPTH,
+                height: remainingHeight,
+                weight: ceilN((DEFAULT_PALLET_WEIGHT + remainingTotalWeight), 5),
+                type: 'Pallet',
+                isDG: Boolean(dangerousGoods.length),
+                dgWeight: remainingDgWeight
+            })
+            
+        } else {
+
+            const palletHeight = totalHeight;
+
+            consignmentItems.push({
+                quantity: 1,
+                name: 'Pallet',
+                width: DEFAULT_PALLET_WIDTH,
+                depth: DEFAULT_PALLET_DEPTH,
+                height: palletHeight,
+                weight: ceilN((DEFAULT_PALLET_WEIGHT + remainingWeight + dangerousGoodsWeight), 5),
+                type: 'Pallet',
+                isDG: Boolean(dangerousGoods.length),
+                dgWeight: dangerousGoodsWeight
+            })
+
+        }
+
     }
 
     consignmentItems.forEach((item, index) => {

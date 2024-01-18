@@ -12,6 +12,7 @@ import FormControl from '@mui/material/FormControl';
 import BatteryAlertIcon from '@mui/icons-material/BatteryAlert';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ErrorIcon from '@mui/icons-material/Error';
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -29,6 +30,7 @@ import { stateFromPostcode } from '../functions/general';
 import ConsignmentItemRow from './ConsignmentItemRow';
 import OffersTable from './OffersTable';
 import GetOffersButton from './GetOffersButton';
+import { createQuoteEmailBody } from '../functions/createQuoteEmailBody';
 
 const DEBOUNCE_TIMEOUT_DURATION = 1000;
 const defaultConsignmentItem = packageOptions['Carton'];
@@ -39,16 +41,16 @@ const FreightEstimatePage = () => {
 
     const searchValue = useRef('SO-00006001')
     const [searchInput, setSearchInput] = useState('')
-    const [searchType, setSearchType] = useState('order')
+    const [searchType, setSearchType] = useState('order') // 'order' || 'quote'
     const [isValid, setIsValid] = useState(false)
     const [details, setDetails] = useState({})
     const [consignmentItems, setConsignmentItems] = useState([defaultConsignmentItem])
-    
+
     const [loaded, setLoaded] = useState(false)
-    
+
     const [offers, setOffers] = useState(null)
     const [offersLoading, setOffersLoading] = useState(false)
-    const [canGetOffers, setCanGetOffers ] = useState(false)
+    const [canGetOffers, setCanGetOffers] = useState(false)
 
 
     const handleSetSuburb = (id, suburb, state, postcode) => {
@@ -68,69 +70,72 @@ const FreightEstimatePage = () => {
     useEffect(() => {
 
         if (loaded) {
+            if (details['deliverySuburb']) {
 
-            let suburb = details['deliverySuburb'].toString().trim().toUpperCase()
-            let postcode = Number(details['deliveryPostCode'].toString().trim()) // need to check what Freightmate returns as a postcode value ... 0802 ??
+                let suburb = details['deliverySuburb'].toString().trim().toUpperCase()
+                let postcode = Number(details['deliveryPostCode'].toString().trim()) // need to check what Freightmate returns as a postcode value ... 0802 ??
 
-            console.log({ suburb })
-            console.log({ postcode })
+                console.log({ suburb })
+                console.log({ postcode })
 
-            let url = `${BASE_URL}/api/freightmate/suburb/${suburb}`
+                let url = `${BASE_URL}/api/freightmate/suburb/${suburb}`
 
-            axios.get(url).then(resp => {
+                axios.get(url).then(resp => {
 
-                console.log({ resp })
+                    console.log({ resp })
 
-                if (resp.data === "") {
-                    // raise error on suburb field
-                    console.log('NO RESPONSE DATA')
+                    if (resp.data === "") {
+                        // raise error on suburb field
+                        console.log('NO RESPONSE DATA')
 
-                    // setResults([])
-                } else {
-
-                    console.log('RESPONSE SUCCESS')
-
-                    let respResults = resp.data
-                    console.log({ respResults })
-                    console.log({ suburb })
-                    console.log({ postcode })
-
-                    let temp = resp.data.filter(result => ((result.name === suburb) && (result.postcode === postcode)))
-
-                    console.log({ temp })
-
-                    if (temp.length === 1) {
-                        // matched ... success
-                        let matched = temp[0]
-
-                        let _id = matched.id
-                        let suburb = matched.name
-                        let state = stateFromPostcode(matched.postcode);
-
-                        handleSetSuburb(_id, suburb, state, postcode)
-
+                        // setResults([])
                     } else {
-                        // TODO: raise error
 
-                        console.log('MULTIPLE RESULTS')
+                        console.log('RESPONSE SUCCESS')
+
+                        let respResults = resp.data
+                        console.log({ respResults })
+                        console.log({ suburb })
+                        console.log({ postcode })
+
+                        let temp = resp.data.filter(result => ((result.name === suburb) && (result.postcode === postcode)))
+
+                        console.log({ temp })
+
+                        if (temp.length === 1) {
+                            // matched ... success
+                            let matched = temp[0]
+
+                            let _id = matched.id
+                            let suburb = matched.name
+                            let state = stateFromPostcode(matched.postcode);
+
+                            handleSetSuburb(_id, suburb, state, postcode)
+
+                        } else {
+                            // TODO: raise error
+
+                            console.log('MULTIPLE RESULTS')
+                        }
+
                     }
+                })
 
-                }
-            })
+            }
 
         }
 
     }, [loaded])
 
     useEffect(() => {
-        
-        if ((loaded) && (details.addressId!==null)) {
+
+        if ((loaded) && (details.addressId !== null)) {
             setOffersLoading(true);
 
             const delayDebounceFn = setTimeout(() => {
                 getOffers()
             }, DEBOUNCE_TIMEOUT_DURATION)
-    
+
             return () => clearTimeout(delayDebounceFn)
         }
     }, [consignmentItems])
@@ -189,7 +194,9 @@ const FreightEstimatePage = () => {
         setCanGetOffers(false)
 
         if (isValid) {
-            const endpoint = `${BASE_URL}/api/unleashed/orders/${searchValue.current}/data`
+            const endpoint = (searchType === 'order')
+                ? `${BASE_URL}/api/unleashed/orders/${searchValue.current}/data`
+                : `${BASE_URL}/api/unleashed/quotes/${searchValue.current}/data`
 
             axios.get(endpoint).then(response => {
                 const data = response.data
@@ -254,6 +261,19 @@ const FreightEstimatePage = () => {
         setConsignmentItems(temp)
     }
 
+    const handleCopyToClipboard = (e) => {
+        const emailBody = createQuoteEmailBody(details, consignmentItems)
+        navigator.clipboard.writeText(emailBody)
+
+        const element = e.target
+        const previousButtonText = element.innerText
+        element.innerText = 'Copied to Clipboard!'
+
+        setTimeout(() => {
+            element.innerText = previousButtonText;
+        }, 5000)
+    }
+
     const modfiyDetail = (key, value) => {
         let temp = { ...details }
         temp[key] = value
@@ -279,7 +299,11 @@ const FreightEstimatePage = () => {
         }
 
         let contactFullName = details.contactFullName;
-        companyName = (companyName === null) ? contactFullName : companyName;
+        companyName = (companyName === null)
+            ? contactFullName
+            : (companyName.length > 45)
+                ? companyName.substr(0, 45)
+                : companyName
 
         const body = {
             'id': 0,
@@ -324,14 +348,14 @@ const FreightEstimatePage = () => {
             temp['deliveryPostCode'] = response.data.suburb.postcode // : 2541
 
             temp['deliveryAddress'] = response.data;
-            
+
             // enable offers now that we have a valid delivery address
             setCanGetOffers(true)
 
             setDetails(temp)
 
         }).catch(errors => {
-            console.log('ERROR', 'createFreightmateAddress()', {errors})
+            console.log('ERROR', 'createFreightmateAddress()', { errors })
         });
     }
 
@@ -345,7 +369,7 @@ const FreightEstimatePage = () => {
             // const formattedOffers = priceFormatOffers(offers)
             // setOffers(formattedOffers)
 
-            
+
             setOffersLoading(false)
 
         })
@@ -363,19 +387,17 @@ const FreightEstimatePage = () => {
             </Box>
 
 
-
-
             <Box component={Paper} p={2} sx={{ flexGrow: 1, width: '600px', bgcolor: 'rgb(240,240,240)', marginLeft: '200px' }} my={8}>
                 <Grid container rowSpacing={2} columnSpacing={2}>
 
                     <Grid xs={5}>
-                        <TextField 
+                        <TextField
                             className='loadable'
-                            size='large' 
-                            fullWidth 
-                            label={'Quote / Order number'} 
-                            variant='outlined' 
-                            value={searchInput} 
+                            size='large'
+                            fullWidth
+                            label={'Quote / Order number'}
+                            variant='outlined'
+                            value={searchInput}
                             onChange={handleModifySearch} />
                     </Grid>
 
@@ -386,7 +408,7 @@ const FreightEstimatePage = () => {
                                 name="controlled-radio-buttons-group"
                                 value={searchType}
                                 onChange={handleChange}>
-                                <FormControlLabel className='loadable' value="quote" control={<Radio />} label="Quote" disabled />
+                                <FormControlLabel className='loadable' value="quote" control={<Radio />} label="Quote" />
                                 <FormControlLabel className='loadable' value="order" control={<Radio />} label="Sales Order" />
                             </RadioGroup>
                         </FormControl>
@@ -419,7 +441,20 @@ const FreightEstimatePage = () => {
 
                                         <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                             <TableCell padding='normal' component="th" scope="row">Company Name</TableCell>
-                                            <TableCell padding='normal' align="right">{details.companyName}</TableCell>
+                                            <TableCell padding='normal' align="right">
+
+                                                <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={1}>
+                                                    <div>{details.companyName}</div>
+                                                    {
+                                                        details.companyName
+                                                            ? (details.companyName.length <= 45)
+                                                                ? <CheckCircleIcon fontSize='small' color='success' sx={{ transform: 'scale(0.75)' }} />
+                                                                : <ErrorIcon fontSize='small' color='error' sx={{ transform: 'scale(0.75)' }} />
+                                                            : <CancelIcon fontSize='small' color='error' sx={{ transform: 'scale(0.75)' }} />
+                                                    }
+                                                </Stack>
+
+                                            </TableCell>
                                         </TableRow>
                                         <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                             <TableCell padding='normal' component="th" scope="row">Customer Reference</TableCell>
@@ -704,18 +739,30 @@ const FreightEstimatePage = () => {
                     </Grid>
 
 
-                    
-                    
+
+
                     <Grid xs={12}>
                         {
                             offers
-                                ? <OffersTable offers={offers} offersLoading={offersLoading}/>
+                                ? <OffersTable offers={offers} offersLoading={offersLoading} />
                                 : canGetOffers
                                     ? <GetOffersButton getOffers={getOffers} offersLoading={offersLoading} setOffersLoading={setOffersLoading} />
                                     : null
                         }
-                    </Grid>
 
+
+                        {
+                            loaded
+                                ? <Grid mt={10} mb={4}>
+                                    <Button size='large' variant='contained' color='info' onClick={handleCopyToClipboard}>
+                                        Copy Quote template
+                                    </Button>
+                                </Grid>
+                                : null
+                        }
+
+
+                    </Grid>
 
                 </Grid>
             </Box>
@@ -725,5 +772,7 @@ const FreightEstimatePage = () => {
         </Box>
     )
 }
+
+
 
 export default FreightEstimatePage;

@@ -76,6 +76,7 @@ const getContact = async (customerGuid, contactGuid) => {
     const endpoint = `/Customers/${customerGuid}/Contacts`
     const contact = await getResponse(endpoint).then(data => {
         let contacts = data['Items']
+        console.log({contacts})
         const results = contacts.filter((contact) => (contact['Guid'] === contactGuid))
         const result = results[0] // there should only be 1 contact returned
         return { 
