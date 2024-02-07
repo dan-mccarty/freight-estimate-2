@@ -14,7 +14,8 @@ const carrierTierLookup = {
     'ALLIED EXPRESS': '2',
     'TFMXPRESS': '2',
     'TAS FREIGHT': '2',
-    'CAPITAL': 'Local'
+    'CAPITAL': 'Local',
+    'CC AUZ COUNTRY': '2'
 }
 
 
@@ -30,12 +31,12 @@ const OfferRow = ({ offer, offersLoading }) => {
 
     const carrierName = offer.carrierName.toString().replaceAll('_', ' ').toUpperCase()
     const serviceType = offer.serviceTypeName.toString().replaceAll('_', ' ').toUpperCase()
-    const tier= carrierTierLookup[carrierName]
+    const tier = carrierTierLookup[carrierName]
     const timeCutOff = `${hour}:${minute}${isMorning ? 'AM' : 'PM'}`
     const offerCost = offer.totalCost.toFixed(2)
     const formattedCost = formatPrice(offer.totalCost).toFixed(0)
-    
-    
+
+
     if (offersLoading) {
         const height = 22
         return (

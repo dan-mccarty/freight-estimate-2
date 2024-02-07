@@ -1,8 +1,7 @@
-import React from 'react'
-import { Button, Typography } from '@mui/material'
+import React from 'react';
+import { Button, Typography } from '@mui/material';
 
 import CircularProgress from '@mui/material/CircularProgress';
-
 
 /**
  * 
@@ -14,21 +13,22 @@ import CircularProgress from '@mui/material/CircularProgress';
  */
 
 const GetOffersButton = ({ getOffers, offersLoading, setOffersLoading }) => {
+  const handleClick = () => {
+    setOffersLoading(true);
+    getOffers();
+  };
 
-    const handleClick = () => {
-        setOffersLoading(true)
-        getOffers()
-    }
+  return (
+    <Button
+      size="large"
+      variant="contained"
+      color="success"
+      disabled={offersLoading}
+      onClick={handleClick}
+    >
+      {offersLoading ? 'Loading...' : 'Get Offers'}
+    </Button>
+  );
+};
 
-    return (
-        <Button size='large' variant='contained' color='success' disabled={offersLoading} onClick={handleClick}>
-            {
-                offersLoading
-                    ? 'Loading...'
-                    : 'Get Offers'
-            }
-        </Button>
-    )
-}
-
-export default GetOffersButton
+export default GetOffersButton;

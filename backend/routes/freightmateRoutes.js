@@ -29,6 +29,10 @@ router.get('/suburb/:suburb', async (req, res) => {
         })
         res.status(200).json(apiResponse.data.results);
     } catch (error) {
+        console.log({ 
+            route: '/api/freightmate/suburb/:suburb',
+            error: error.message
+        });
         res.status(500).json({ error: error.message });
     }
 
@@ -49,6 +53,11 @@ router.post('/address/', async (req, res) => {
         // res.status(200).json({id: _id});
         res.status(200).json(apiResponse.data);
     } catch (error) {
+        console.log({ 
+            route: '/api/freightmate/address/',
+            body,
+            error
+        });
         res.status(500).json({ error: error.message });
     }
 })
@@ -67,6 +76,10 @@ router.post('/offers/', async (req, res) => {
         })
         res.status(200).json(apiResponse.data);
     } catch (error) {
+        console.log({ 
+            route: '/api/freightmate/offers/',
+            error: error.message
+        });
         res.status(500).json({ error: error.message });
     }
         

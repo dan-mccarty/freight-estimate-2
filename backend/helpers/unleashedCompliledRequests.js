@@ -1,625 +1,629 @@
-
-const axios = require('axios');
-const CryptoJS = require('crypto-js')
+const axios = require("axios");
+const CryptoJS = require("crypto-js");
 
 const {
-    getSalesQuote,
-    getSalesOrder,
-    getProduct,
-    getContact,
-} = require('./unleashedHelpers')
-
+  getSalesQuote,
+  getSalesOrder,
+  getProduct,
+  getContact,
+} = require("./unleashedHelpers");
 
 const formatNumber = (value) => {
-    return (value === null) ? 0 : Number((value*100).toFixed(2))
-}
+  return value === null ? 0 : Number((value * 100).toFixed(2));
+};
 
 const defaultData = {
-    orderNumber: null,
-    shipmentNumber: null,
-    
-    companyName: null,
-    contactFullName: null,
-    contactEmailAddress: null,
-    contactPhoneNumber: null,
-    contactMobilePhone: null,
-    // contactOfficePhone: null,
-    contactPrimaryPhone: null,
-    customerRef: null,
-    comments: null,
-    
-    deliveryMethod: null,
-    deliveryInstruction: null,
-    deliveryStreetAddress: null,
-    deliveryStreetAddress2: null,
-    deliverySuburb: null,
-    deliveryState: null,
-    // deliveryRegion: null,
-    deliveryPostCode: null,
-    deliveryCountry: null,
+  orderNumber: null,
+  shipmentNumber: null,
 
-    canShip: true,
-    canStarShipIt: true,
-    signatureRequired: false,
-    tailgateRequired: false,
+  companyName: null,
+  contactFullName: null,
+  contactEmailAddress: null,
+  contactPhoneNumber: null,
+  contactMobilePhone: null,
+  // contactOfficePhone: null,
+  contactPrimaryPhone: null,
+  customerRef: null,
+  comments: null,
 
-    productLines: [],
-    shipmentWeight: null,
-    shipmentVolume: null,
+  deliveryMethod: null,
+  deliveryInstruction: null,
+  deliveryStreetAddress: null,
+  deliveryStreetAddress2: null,
+  deliverySuburb: null,
+  deliveryState: null,
+  // deliveryRegion: null,
+  deliveryPostCode: null,
+  deliveryCountry: null,
 
-    subTotal: null,
-    freightCharge: null,
-    
-    salesPersonFullName: null,
-    salesPersonEmail: null,
-    
-    addressSuburbId: null, // for freightmate
-    suburbOptions: [], // for freightmate
-    addressId: null, // for freightmate
-    
-    // there is no default calculated value for the below
-    offers: [], // for freightmate
-    offerSelected: null, // index of offer selected
-    connoteCarrierName: null, // updated when offered clicked
-    connoteServiceTypeName: null, // updated when offered clicked
+  canShip: true,
+  canStarShipIt: true,
+  signatureRequired: false,
+  tailgateRequired: false,
 
-    requireResidential: false,
-    requireTailGate: false,
-    requireSignature: true,
-}
+  productLines: [],
+  shipmentWeight: null,
+  shipmentVolume: null,
 
+  subTotal: null,
+  freightCharge: null,
+
+  salesPersonFullName: null,
+  salesPersonEmail: null,
+
+  addressSuburbId: null, // for freightmate
+  suburbOptions: [], // for freightmate
+  addressId: null, // for freightmate
+
+  // there is no default calculated value for the below
+  offers: [], // for freightmate
+  offerSelected: null, // index of offer selected
+  connoteCarrierName: null, // updated when offered clicked
+  connoteServiceTypeName: null, // updated when offered clicked
+
+  requireResidential: false,
+  requireTailGate: false,
+  requireSignature: true,
+};
 
 const getProductLines = async (lines) => {
-    console.log('getProductLines')
-    console.log({lines})
-    
-    let productLines = [];
+  console.log("getProductLines");
+  console.log({ lines });
 
-    for (let i = 0; i < lines.length; i++) {
-        let lineItem = lines[i]
+  let productLines = [];
 
-        console.log({Product: lineItem['Product']})
-        const productGuid = lineItem['Product']['Guid']
+  for (let i = 0; i < lines.length; i++) {
+    let lineItem = lines[i];
 
-        try {
+    console.log({ Product: lineItem["Product"] });
+    const productGuid = lineItem["Product"]["Guid"];
 
-            const product = await getProduct(productGuid)
+    try {
+      const product = await getProduct(productGuid);
 
-            const productCode = product['ProductCode'] // : 'IN-V-MP-II-12/3000/120-32',
-            const productDescription = product['ProductDescription'] // : 'Victron MultiPlus-II 12/3000/120-32 230V - PMP122305010',
-            const productGroup = product['ProductGroup']['GroupName']
-    
-            const barcode = product['Barcode'] // : 'PMP122305010',
-            const width = formatNumber(product['Width']) // : 0.25,
-            const height = formatNumber(product['Height']) // : 0.65,
-            const depth = formatNumber(product['Depth']) // : 0.35,
-            let weight = product['Weight'] // : 22,
-            weight = (weight === null) ? 0 : weight
-            
-            const shipmentQty = lineItem['ShipmentQty']
-            const orderQuantity = lineItem['OrderQuantity']
-            const quoteQuantity = lineItem['QuoteQuantity'] // quote ??
-            const quantity = shipmentQty ? shipmentQty : orderQuantity ? orderQuantity : quoteQuantity
-            
-            const isDG = (productGroup === "Batteries - Lithium")
-    
-            productLines.push({ productCode, productDescription, productGroup, barcode, width, height, depth, weight, quantity, isDG })
+      const productCode = product["ProductCode"]; // : 'IN-V-MP-II-12/3000/120-32',
+      const productDescription = product["ProductDescription"]; // : 'Victron MultiPlus-II 12/3000/120-32 230V - PMP122305010',
+      const productGroup = product["ProductGroup"]["GroupName"];
 
-        } catch (error) {
-            console.log('getProductLines', i, lines.length)
-            console.log({error: error.message })
-        }
-        
+      const barcode = product["Barcode"]; // : 'PMP122305010',
+      const width = formatNumber(product["Width"]); // : 0.25,
+      const height = formatNumber(product["Height"]); // : 0.65,
+      const depth = formatNumber(product["Depth"]); // : 0.35,
+      let weight = product["Weight"]; // : 22,
+      weight = weight === null ? 0 : weight;
+
+      const shipmentQty = lineItem["ShipmentQty"];
+      const orderQuantity = lineItem["OrderQuantity"];
+      const quoteQuantity = lineItem["QuoteQuantity"]; // quote ??
+      const quantity = shipmentQty
+        ? shipmentQty
+        : orderQuantity
+        ? orderQuantity
+        : quoteQuantity;
+
+      const isDG = productGroup === "Batteries - Lithium";
+
+      productLines.push({
+        productCode,
+        productDescription,
+        productGroup,
+        barcode,
+        width,
+        height,
+        depth,
+        weight,
+        quantity,
+        isDG,
+      });
+    } catch (error) {
+      console.log("getProductLines", i, lines.length);
+      console.log({ error: error.message });
     }
+  }
 
-    return productLines
-}
+  return productLines;
+};
 
-const getQuoteData = async (quoteNumber) =>  {
-    console.log('getQuoteData')
-    
-    let quote = await getSalesQuote(quoteNumber)
+const getQuoteData = async (quoteNumber) => {
+  console.log("getQuoteData");
 
-    console.log({quote})
-    
-    let charges = []
-    let quoteLines = [] 
-    
-    quote['SalesQuoteLines'].forEach(line => {
-        if (line.LineType === 'Charge') {
-            charges.push({
-                description: line['ProductDescription'],
-                price: line['UnitPrice'],
-                quantity: line['OrderQuantity'],
-                xeroAccount: line['XeroSalesAccount']
-            })
-        } else {
-            quoteLines.push(line)
-        }
-    })
+  let quote = await getSalesQuote(quoteNumber);
 
-    let freightCharge = 0
-    quote['SalesQuoteLines'].forEach(lineItem => {
-        if (lineItem['LineType'] === 'Charge') {
-            if (lineItem['XeroSalesAccount'] === '45000') {
-                freightCharge+=(lineItem['UnitPrice'] * ( 1 + lineItem['TaxRate'] ))
-            }
-        }
-    })
-    freightCharge = Number(freightCharge.toFixed(2))
-    
-    const productLines = await getProductLines(quoteLines)
+  console.log({ quote });
 
-    const deliveryMethod = quote['DeliveryMethod'] //: 'Road Freight',
-    const deliveryInstruction = quote['DeliveryInstruction'] // : 'DO NOT SHIP - NOT A REAL ORDER',
+  let charges = [];
+  let quoteLines = [];
 
-    const dontShipMethods = [
-        null,
-        'Local Pick Up',
-        'Hand Delivery',
-        'Customer Freight',
-    ]
-    
-    const canShip = (!(dontShipMethods.includes(deliveryMethod)))
-    // let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
-
-
-    //
-    const companyName = quote['Customer']['CustomerName']
-    const customerRef = quote['CustomerRef']
-    const comments = quote['Comments']
-
-    //     
-    let contactFirstName;
-    let contactLastName;
-    let contactMobilePhone;
-    let contactPhoneNumber;
-    let contactEmailAddress;
-
-    console.log({Customer: quote['Customer']})
-    const customerGuid = quote['Customer']['Guid']
-    
-    const deliveryContact = quote['DeliveryContact']
-    
-    // if (!(deliveryContact === null || deliveryContact === undefined)) {
-    if (deliveryContact) {
-        console.log('')
-        console.log({DeliveryContact: quote['DeliveryContact']})
-        let contactGuid = quote['DeliveryContact']['Guid']
-        let contact = await getContact(customerGuid, contactGuid)
-
-        contactFirstName = contact.firstName
-        contactLastName = contact.lastName
-        contactMobilePhone = contact.mobilePhone
-        contactPhoneNumber = contact.phoneNumber
-        contactEmailAddress = contact.emailAddress
+  quote["SalesQuoteLines"].forEach((line) => {
+    if (line.LineType === "Charge") {
+      charges.push({
+        description: line["ProductDescription"],
+        price: line["UnitPrice"],
+        quantity: line["OrderQuantity"],
+        xeroAccount: line["XeroSalesAccount"],
+      });
+    } else {
+      quoteLines.push(line);
     }
+  });
 
-    const contactFullName = `${contactFirstName} ${contactLastName}`.replace('null', '').trim()
-    const contactPrimaryPhone = (contactMobilePhone !== null)
-        ? contactMobilePhone
-        : (contactPhoneNumber !== null)
-            ? contactPhoneNumber
-            : '';
-
-    // 
-    let deliveryStreetAddress = quote['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
-    deliveryStreetAddress = deliveryStreetAddress
-                                ? deliveryStreetAddress.replace(',', '').trim()
-                                : deliveryStreetAddress
-
-    let deliveryStreetAddress2 = quote['DeliveryStreetAddress2'] // : null,
-    deliveryStreetAddress2 = deliveryStreetAddress2
-                                ? deliveryStreetAddress2.replace(',', '').trim()
-                                : deliveryStreetAddress2
-
-    const suburb = quote['DeliverySuburb'] // : 'Port Melbourne',
-    const city = quote['DeliveryCity'] // : 'Port Melbourne',
-    let deliverySuburb = (suburb !== null) ? suburb : city
-    deliverySuburb = deliverySuburb 
-                        ? deliverySuburb.replace(',', '').trim()
-                        : deliverySuburb
-
-    const deliveryState = quote['DeliveryRegion'] // : 'Victoria',
-    const deliveryPostCode = quote['DeliveryPostCode'] // : '3207',
-    const deliveryCountry = quote['DeliveryCountry'] // : 'Australia',
-
-    let subTotal = quote['SubTotal'] //: 338.37,
-
-    // 
-    let salesPerson = quote['SalesPerson']
-    let salesPersonName;
-    let salesPersonEmail;
-    if (salesPerson!==null) {
-        salesPersonName = salesPerson['FullName'] // : 'Andrew Wilson',
-        salesPersonEmail = salesPerson['Email'] // 'andrew@dpasolar.com.au',
+  let freightCharge = 0;
+  quote["SalesQuoteLines"].forEach((lineItem) => {
+    if (lineItem["LineType"] === "Charge") {
+      if (lineItem["XeroSalesAccount"] === "45000") {
+        freightCharge += lineItem["UnitPrice"] * (1 + lineItem["TaxRate"]);
+      }
     }
+  });
+  freightCharge = Number(freightCharge.toFixed(2));
 
-    let data = { ...defaultData }
+  const productLines = await getProductLines(quoteLines);
 
-    // data['quoteNumber']             = quoteNumber;
-    data['orderNumber']             = quoteNumber;
-    
-    data['companyName']             = companyName;
-    data['customerRef']             = customerRef;
-    data['comments']                = comments;
-    
-    data['contactFullName']         = contactFullName;
-    data['contactEmailAddress']     = contactEmailAddress;
-    data['contactPrimaryPhone']     = contactPrimaryPhone;
-    // data['contactPhoneNumber']      = contactPhoneNumber;
-    // data['contactMobilePhone']      = contactMobilePhone;
-    
-    data['salesPersonName']         = salesPersonName
-    data['salesPersonEmail']        = salesPersonEmail
+  const deliveryMethod = quote["DeliveryMethod"]; //: 'Road Freight',
+  const deliveryInstruction = quote["DeliveryInstruction"]; // : 'DO NOT SHIP - NOT A REAL ORDER',
 
-    data['deliveryMethod']          = deliveryMethod;
-    data['deliveryInstruction']     = deliveryInstruction;
-    
-    data['deliveryStreetAddress']   = deliveryStreetAddress;
-    data['deliveryStreetAddress2']  = deliveryStreetAddress2;
-    data['deliverySuburb']          = deliverySuburb;
-    data['deliveryState']           = deliveryState;
-    data['deliveryPostCode']        = deliveryPostCode;
-    data['deliveryCountry']         = deliveryCountry;
-    
-    data['canShip']                 = canShip;
-    data['requireResidential']      = false;
-    data['requireTailGate']         = false;
-    data['requireSignature']        = true;
+  const dontShipMethods = [
+    null,
+    "Local Pick Up",
+    "Hand Delivery",
+    "Customer Freight",
+  ];
 
-    // data['canStarShipIt'] = canStarShipIt;
-    data['productLines']            = productLines;
-    data['charges']                 = charges;
-    data['freightCharge']           = freightCharge;
-    data['subTotal']                = subTotal;
-    
-    data['offers'] = null
+  const canShip = !dontShipMethods.includes(deliveryMethod);
+  // let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
 
-    return data;
+  //
+  const companyName = quote["Customer"]["CustomerName"];
+  const customerRef = quote["CustomerRef"];
+  const comments = quote["Comments"];
 
-}
+  //
+  let contactFirstName;
+  let contactLastName;
+  let contactMobilePhone;
+  let contactPhoneNumber;
+  let contactEmailAddress;
 
-const getOrderData = async (orderNumber) =>  {
-    console.log('getOrderData')
+  console.log({ Customer: quote["Customer"] });
+  const customerGuid = quote["Customer"]["Guid"];
 
-    let order = await getSalesOrder(orderNumber)
+  const deliveryContact = quote["DeliveryContact"];
 
-    console.log({order})
-    
-    let charges = []
-    let orderLines = [] 
-    
-    order['SalesOrderLines'].forEach(line => {
-        if (line.LineType === 'Charge') {
-            charges.push({
-                description: line['ProductDescription'],
-                price: line['UnitPrice'],
-                quantity: line['OrderQuantity'],
-                xeroAccount: line['XeroSalesAccount']
-            })
-        } else {
-            orderLines.push(line)
-        }
-    })
+  // if (!(deliveryContact === null || deliveryContact === undefined)) {
+  if (deliveryContact) {
+    console.log("");
+    console.log({ DeliveryContact: quote["DeliveryContact"] });
+    let contactGuid = quote["DeliveryContact"]["Guid"];
+    let contact = await getContact(customerGuid, contactGuid);
 
-    let freightCharge = 0
-    order['SalesOrderLines'].forEach(lineItem => {
-        if (lineItem['LineType'] === 'Charge') {
-            if (lineItem['XeroSalesAccount'] === '45000') {
-                freightCharge+=(lineItem['UnitPrice'] * ( 1 + lineItem['TaxRate'] ))
-            }
-        }
-    })
-    freightCharge = Number(freightCharge.toFixed(2))
-    
-    const productLines = await getProductLines(orderLines)
+    contactFirstName = contact.firstName;
+    contactLastName = contact.lastName;
+    contactMobilePhone = contact.mobilePhone;
+    contactPhoneNumber = contact.phoneNumber;
+    contactEmailAddress = contact.emailAddress;
+  }
 
-    const deliveryMethod = order['DeliveryMethod'] //: 'Road Freight',
-    const deliveryInstruction = order['DeliveryInstruction'] // : 'DO NOT SHIP - NOT A REAL ORDER',
+  const contactFullName = `${contactFirstName} ${contactLastName}`
+    .replace("null", "")
+    .trim();
+  const contactPrimaryPhone =
+    contactMobilePhone !== null
+      ? contactMobilePhone
+      : contactPhoneNumber !== null
+      ? contactPhoneNumber
+      : "";
 
-    const dontShipMethods = [
-        null,
-        'Local Pick Up',
-        'Hand Delivery',
-        'Customer Freight',
-    ]
-    
-    const canShip = (!(dontShipMethods.includes(deliveryMethod)))
-    // let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
+  //
+  let deliveryStreetAddress = quote["DeliveryStreetAddress"]; // : '4 / 273 Williamstown Rd',
+  deliveryStreetAddress = deliveryStreetAddress
+    ? deliveryStreetAddress.replace(",", "").trim()
+    : deliveryStreetAddress;
 
+  let deliveryStreetAddress2 = quote["DeliveryStreetAddress2"]; // : null,
+  deliveryStreetAddress2 = deliveryStreetAddress2
+    ? deliveryStreetAddress2.replace(",", "").trim()
+    : deliveryStreetAddress2;
 
-    //
-    const companyName = order['Customer']['CustomerName']
-    const customerRef = order['CustomerRef']
-    const comments = order['Comments']
+  const suburb = quote["DeliverySuburb"]; // : 'Port Melbourne',
+  const city = quote["DeliveryCity"]; // : 'Port Melbourne',
+  let deliverySuburb = suburb !== null ? suburb : city;
+  deliverySuburb = deliverySuburb
+    ? deliverySuburb.replace(",", "").trim()
+    : deliverySuburb;
 
-    //     
-    let contactFirstName;
-    let contactLastName;
-    let contactMobilePhone;
-    let contactPhoneNumber;
-    let contactEmailAddress;
+  const deliveryState = quote["DeliveryRegion"]; // : 'Victoria',
+  const deliveryPostCode = quote["DeliveryPostCode"]; // : '3207',
+  const deliveryCountry = quote["DeliveryCountry"]; // : 'Australia',
 
-    const customerGuid = order['Customer']['Guid']
-    const deliveryContact = order['DeliveryContact']
-    
-    if (deliveryContact !== null) {
-        let contactGuid = order['DeliveryContact']['Guid']
-        let contact = await getContact(customerGuid, contactGuid)
+  let subTotal = quote["SubTotal"]; //: 338.37,
 
-        contactFirstName = contact.firstName
-        contactLastName = contact.lastName
-        contactMobilePhone = contact.mobilePhone
-        contactPhoneNumber = contact.phoneNumber
-        contactEmailAddress = contact.emailAddress
+  //
+  let salesPerson = quote["SalesPerson"];
+  let salesPersonName;
+  let salesPersonEmail;
+  if (salesPerson !== null) {
+    salesPersonName = salesPerson["FullName"]; // : 'Andrew Wilson',
+    salesPersonEmail = salesPerson["Email"]; // 'andrew@dpasolar.com.au',
+  }
+
+  let data = { ...defaultData };
+
+  // data['quoteNumber']             = quoteNumber;
+  data["orderNumber"] = quoteNumber;
+
+  data["companyName"] = companyName;
+  data["customerRef"] = customerRef;
+  data["comments"] = comments;
+
+  data["contactFullName"] = contactFullName;
+  data["contactEmailAddress"] = contactEmailAddress;
+  data["contactPrimaryPhone"] = contactPrimaryPhone;
+  // data['contactPhoneNumber']      = contactPhoneNumber;
+  // data['contactMobilePhone']      = contactMobilePhone;
+
+  data["salesPersonName"] = salesPersonName;
+  data["salesPersonEmail"] = salesPersonEmail;
+
+  data["deliveryMethod"] = deliveryMethod;
+  data["deliveryInstruction"] = deliveryInstruction;
+
+  data["deliveryStreetAddress"] = deliveryStreetAddress;
+  data["deliveryStreetAddress2"] = deliveryStreetAddress2;
+  data["deliverySuburb"] = deliverySuburb;
+  data["deliveryState"] = deliveryState;
+  data["deliveryPostCode"] = deliveryPostCode;
+  data["deliveryCountry"] = deliveryCountry;
+
+  data["canShip"] = canShip;
+  data["requireResidential"] = false;
+  data["requireTailGate"] = false;
+  data["requireSignature"] = true;
+
+  // data['canStarShipIt'] = canStarShipIt;
+  data["productLines"] = productLines;
+  data["charges"] = charges;
+  data["freightCharge"] = freightCharge;
+  data["subTotal"] = subTotal;
+
+  data["offers"] = null;
+
+  return data;
+};
+
+const getOrderData = async (orderNumber) => {
+  console.log("getOrderData");
+
+  let order = await getSalesOrder(orderNumber);
+
+  console.log({ order });
+
+  let charges = [];
+  let orderLines = [];
+
+  order["SalesOrderLines"].forEach((line) => {
+    if (line.LineType === "Charge") {
+      charges.push({
+        description: line["ProductDescription"],
+        price: line["UnitPrice"],
+        quantity: line["OrderQuantity"],
+        xeroAccount: line["XeroSalesAccount"],
+      });
+    } else {
+      orderLines.push(line);
     }
+  });
 
-    const contactFullName = `${contactFirstName} ${contactLastName}`.replace('null', '').trim()
-    const contactPrimaryPhone = (contactMobilePhone !== null)
-        ? contactMobilePhone
-        : (contactPhoneNumber !== null)
-            ? contactPhoneNumber
-            : '';
-
-    // 
-    let deliveryStreetAddress = order['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
-    deliveryStreetAddress = deliveryStreetAddress
-                                ? deliveryStreetAddress.replace(',', '').trim()
-                                : deliveryStreetAddress
-
-    let deliveryStreetAddress2 = order['DeliveryStreetAddress2'] // : null,
-    deliveryStreetAddress2 = deliveryStreetAddress2
-                                ? deliveryStreetAddress2.replace(',', '').trim()
-                                : deliveryStreetAddress2
-
-    const suburb = order['DeliverySuburb'] // : 'Port Melbourne',
-    const city = order['DeliveryCity'] // : 'Port Melbourne',
-    let deliverySuburb = (suburb !== null) ? suburb : city
-    deliverySuburb = deliverySuburb 
-                        ? deliverySuburb.replace(',', '').trim()
-                        : deliverySuburb
-
-    const deliveryState = order['DeliveryRegion'] // : 'Victoria',
-    const deliveryPostCode = order['DeliveryPostCode'] // : '3207',
-    const deliveryCountry = order['DeliveryCountry'] // : 'Australia',
-
-    let subTotal = order['SubTotal'] //: 338.37,
-
-    // 
-    let salesPerson = order['SalesPerson']
-    let salesPersonName;
-    let salesPersonEmail;
-    if (salesPerson!==null) {
-        salesPersonName = salesPerson['FullName'] // : 'Andrew Wilson',
-        salesPersonEmail = salesPerson['Email'] // 'andrew@dpasolar.com.au',
+  let freightCharge = 0;
+  order["SalesOrderLines"].forEach((lineItem) => {
+    if (lineItem["LineType"] === "Charge") {
+      if (lineItem["XeroSalesAccount"] === "45000") {
+        freightCharge += lineItem["UnitPrice"] * (1 + lineItem["TaxRate"]);
+      }
     }
+  });
+  freightCharge = Number(freightCharge.toFixed(2));
 
-    let data = { ...defaultData }
+  const productLines = await getProductLines(orderLines);
 
-    data['orderNumber']             = orderNumber;
-    
-    data['companyName']             = companyName;
-    data['customerRef']             = customerRef;
-    data['comments']                = comments;
-    
-    data['contactFullName']         = contactFullName;
-    data['contactEmailAddress']     = contactEmailAddress;
-    data['contactPrimaryPhone']     = contactPrimaryPhone;
-    // data['contactPhoneNumber']      = contactPhoneNumber;
-    // data['contactMobilePhone']      = contactMobilePhone;
-    
-    data['salesPersonName']         = salesPersonName
-    data['salesPersonEmail']        = salesPersonEmail
+  const deliveryMethod = order["DeliveryMethod"]; //: 'Road Freight',
+  const deliveryInstruction = order["DeliveryInstruction"]; // : 'DO NOT SHIP - NOT A REAL ORDER',
 
-    data['deliveryMethod']          = deliveryMethod;
-    data['deliveryInstruction']     = deliveryInstruction;
-    
-    data['deliveryStreetAddress']   = deliveryStreetAddress;
-    data['deliveryStreetAddress2']  = deliveryStreetAddress2;
-    data['deliverySuburb']          = deliverySuburb;
-    data['deliveryState']           = deliveryState;
-    data['deliveryPostCode']        = deliveryPostCode;
-    data['deliveryCountry']         = deliveryCountry;
-    
-    data['canShip']                 = canShip;
-    data['requireResidential']      = false;
-    data['requireTailGate']         = false;
-    data['requireSignature']        = true;
+  const dontShipMethods = [
+    null,
+    "Local Pick Up",
+    "Hand Delivery",
+    "Customer Freight",
+  ];
 
-    // data['canStarShipIt'] = canStarShipIt;
-    data['productLines']            = productLines;
-    data['charges']                 = charges;
-    data['freightCharge']           = freightCharge;
-    data['subTotal']                = subTotal;
-    
-    data['offers'] = null
+  const canShip = !dontShipMethods.includes(deliveryMethod);
+  // let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
 
-    return data;
+  //
+  const companyName = order["Customer"]["CustomerName"];
+  const customerRef = order["CustomerRef"];
+  const comments = order["Comments"];
 
-}
+  //
+  let contactFirstName;
+  let contactLastName;
+  let contactMobilePhone;
+  let contactPhoneNumber;
+  let contactEmailAddress;
 
-const getShipmentData = async (shipment)  => {
-    // console.log('getData')
+  const customerGuid = order["Customer"]["Guid"];
+  const deliveryContact = order["DeliveryContact"];
 
-    let shipmentNumber = shipment['ShipmentNumber'] //: 'SS-SB#2138SolarBox',
-    let orderNumber = shipment['OrderNumber'] //: 'SB#2138SolarBox',
-    
-    console.log({shipment})
+  if (deliveryContact !== null) {
+    let contactGuid = order["DeliveryContact"]["Guid"];
+    let contact = await getContact(customerGuid, contactGuid);
 
+    contactFirstName = contact.firstName;
+    contactLastName = contact.lastName;
+    contactMobilePhone = contact.mobilePhone;
+    contactPhoneNumber = contact.phoneNumber;
+    contactEmailAddress = contact.emailAddress;
+  }
 
-    // add products
-    let shipmentLines = shipment['SalesShipmentLines']
-    // add default values ... so can have a "loading effect"
-    // shipmentLines.forEach(_ => data.productLines.push({}))
-    let productLines = await getProductLines(shipmentLines)
+  const contactFullName = `${contactFirstName} ${contactLastName}`
+    .replace("null", "")
+    .trim();
+  let contactPrimaryPhone =
+    contactMobilePhone !== null
+      ? contactMobilePhone
+      : contactPhoneNumber !== null
+      ? contactPhoneNumber
+      : "";
 
+  //
+  let deliveryStreetAddress = order["DeliveryStreetAddress"]; // : '4 / 273 Williamstown Rd',
+  deliveryStreetAddress = deliveryStreetAddress
+    ? deliveryStreetAddress.replace(",", "").trim()
+    : deliveryStreetAddress;
 
-    // calculate  weight & volume
-    let shipmentWeight = 0
-    let shipmentVolume = 0
+  let deliveryStreetAddress2 = order["DeliveryStreetAddress2"]; // : null,
+  deliveryStreetAddress2 = deliveryStreetAddress2
+    ? deliveryStreetAddress2.replace(",", "").trim()
+    : deliveryStreetAddress2;
 
-    productLines.forEach(product => {
-        let x = product.width
-        let y = product.depth
-        let z = product.height
-        let qty = product.quantity
-        
-        let volume = x * y * z * qty
-        shipmentVolume+=volume
-        
-        let lineWeight = product.weight * qty
-        shipmentWeight += lineWeight
-    })
+  const suburb = order["DeliverySuburb"]; // : 'Port Melbourne',
+  const city = order["DeliveryCity"]; // : 'Port Melbourne',
+  let deliverySuburb = suburb !== null ? suburb : city;
+  deliverySuburb = deliverySuburb
+    ? deliverySuburb.replace(",", "").trim()
+    : deliverySuburb;
 
-    shipmentWeight = Number(shipmentWeight.toFixed(2))
-    shipmentVolume = Number(shipmentVolume.toFixed(7))
+  const deliveryState = order["DeliveryRegion"]; // : 'Victoria',
+  const deliveryPostCode = order["DeliveryPostCode"]; // : '3207',
+  const deliveryCountry = order["DeliveryCountry"]; // : 'Australia',
 
+  let subTotal = order["SubTotal"]; //: 338.37,
 
+  //
+  let salesPerson = order["SalesPerson"];
+  let salesPersonName;
+  let salesPersonEmail;
+  if (salesPerson !== null) {
+    salesPersonName = salesPerson["FullName"]; // : 'Andrew Wilson',
+    salesPersonEmail = salesPerson["Email"]; // 'andrew@dpasolar.com.au',
+  }
 
-    // add order
-    let order = await getSalesOrder(orderNumber)
+  let data = { ...defaultData };
 
-    // 
-    let deliveryMethod = order['DeliveryMethod'] //: 'Road Freight',
-    let deliveryInstruction = order['DeliveryInstruction'] // : 'DO NOT SHIP - NOT A REAL ORDER',
+  data["orderNumber"] = orderNumber;
 
-    let dontShipMethods = [
-        null,
-        'Local Pick Up',
-        'Hand Delivery',
-        'Customer Freight',
-    ]
-    
-    let canShip = (!(dontShipMethods.includes(deliveryMethod)))
-    let canStarShipIt = (shipmentWeight < 23) // has to be 22kg for Auspost
+  data["companyName"] = companyName;
+  data["customerRef"] = customerRef;
+  data["comments"] = comments;
 
-    let freightCharge = 0
-    order['SalesOrderLines'].forEach(lineItem => {
-        if (lineItem['LineType'] === 'Charge') {
-            if (lineItem['XeroSalesAccount'] === '45000') {
-                // console.log("****** CHARGE:", lineItem)
-                freightCharge+=(lineItem['UnitPrice'] * ( 1 + lineItem['TaxRate'] ))
-            }
-        }
-    })
-    freightCharge = Number(freightCharge.toFixed(2))
-    // console.log('FREIGHT TOTAL:', freightCharge)
+  data["contactFullName"] = contactFullName;
+  data["contactEmailAddress"] = contactEmailAddress;
+  data["contactPrimaryPhone"] = contactPrimaryPhone;
+  // data['contactPhoneNumber']      = contactPhoneNumber;
+  // data['contactMobilePhone']      = contactMobilePhone;
 
-    //
-    let companyName = order['Customer']['CustomerName']
-    let customerRef = order['CustomerRef']
-    let comments = order['Comments']
+  data["salesPersonName"] = salesPersonName;
+  data["salesPersonEmail"] = salesPersonEmail;
 
-    //     
-    let contactFirstName;
-    let contactLastName;
-    let contactMobilePhone;
-    let contactPhoneNumber;
-    let contactEmailAddress;
+  data["deliveryMethod"] = deliveryMethod;
+  data["deliveryInstruction"] = deliveryInstruction;
 
-    let customerGuid = order['Customer']['Guid']
-    let deliveryContact = order['DeliveryContact']
-    
-    if (deliveryContact !== null) {
-        let contactGuid = order['DeliveryContact']['Guid']
-        let contact = await getContact(customerGuid, contactGuid)
+  data["deliveryStreetAddress"] = deliveryStreetAddress;
+  data["deliveryStreetAddress2"] = deliveryStreetAddress2;
+  data["deliverySuburb"] = deliverySuburb;
+  data["deliveryState"] = deliveryState;
+  data["deliveryPostCode"] = deliveryPostCode;
+  data["deliveryCountry"] = deliveryCountry;
 
-        contactFirstName = contact.firstName
-        contactLastName = contact.lastName
-        contactMobilePhone = contact.mobilePhone
-        contactPhoneNumber = contact.phoneNumber
-        contactEmailAddress = contact.emailAddress
+  data["canShip"] = canShip;
+  data["requireResidential"] = false;
+  data["requireTailGate"] = false;
+  data["requireSignature"] = true;
 
+  // data['canStarShipIt'] = canStarShipIt;
+  data["productLines"] = productLines;
+  data["charges"] = charges;
+  data["freightCharge"] = freightCharge;
+  data["subTotal"] = subTotal;
+
+  data["offers"] = null;
+
+  return data;
+};
+
+const getShipmentData = async (shipment) => {
+  // console.log('getData')
+
+  let shipmentNumber = shipment["ShipmentNumber"]; //: 'SS-SB#2138SolarBox',
+  let orderNumber = shipment["OrderNumber"]; //: 'SB#2138SolarBox',
+
+  console.log({ shipment });
+
+  // add products
+  let shipmentLines = shipment["SalesShipmentLines"];
+  // add default values ... so can have a "loading effect"
+  // shipmentLines.forEach(_ => data.productLines.push({}))
+  let productLines = await getProductLines(shipmentLines);
+
+  // calculate  weight & volume
+  let shipmentWeight = 0;
+  let shipmentVolume = 0;
+
+  productLines.forEach((product) => {
+    let x = product.width;
+    let y = product.depth;
+    let z = product.height;
+    let qty = product.quantity;
+
+    let volume = x * y * z * qty;
+    shipmentVolume += volume;
+
+    let lineWeight = product.weight * qty;
+    shipmentWeight += lineWeight;
+  });
+
+  shipmentWeight = Number(shipmentWeight.toFixed(2));
+  shipmentVolume = Number(shipmentVolume.toFixed(7));
+
+  // add order
+  let order = await getSalesOrder(orderNumber);
+
+  //
+  let deliveryMethod = order["DeliveryMethod"]; //: 'Road Freight',
+  let deliveryInstruction = order["DeliveryInstruction"]; // : 'DO NOT SHIP - NOT A REAL ORDER',
+
+  let dontShipMethods = [
+    null,
+    "Local Pick Up",
+    "Hand Delivery",
+    "Customer Freight",
+  ];
+
+  let canShip = !dontShipMethods.includes(deliveryMethod);
+  let canStarShipIt = shipmentWeight < 23; // has to be 22kg for Auspost
+
+  let freightCharge = 0;
+  order["SalesOrderLines"].forEach((lineItem) => {
+    if (lineItem["LineType"] === "Charge") {
+      if (lineItem["XeroSalesAccount"] === "45000") {
+        // console.log("****** CHARGE:", lineItem)
+        freightCharge += lineItem["UnitPrice"] * (1 + lineItem["TaxRate"]);
+      }
     }
+  });
+  freightCharge = Number(freightCharge.toFixed(2));
+  // console.log('FREIGHT TOTAL:', freightCharge)
 
-    let contactFullName = `${contactFirstName} ${contactLastName}`.replace('null', '').trim()
-    let contactPrimaryPhone = (contactMobilePhone !== null)
-        ? contactMobilePhone
-        : (contactPhoneNumber !== null)
-            ? contactPhoneNumber
-            // : (contactOfficePhone !== null)
-            //     ? contactOfficePhone
-            : '';
+  //
+  let companyName = order["Customer"]["CustomerName"];
+  let customerRef = order["CustomerRef"];
+  let comments = order["Comments"];
 
-    // 
+  //
+  let contactFirstName;
+  let contactLastName;
+  let contactMobilePhone;
+  let contactPhoneNumber;
+  let contactEmailAddress;
 
-    let deliveryStreetAddress = order['DeliveryStreetAddress'] // : '4 / 273 Williamstown Rd',
-    let deliveryStreetAddress2 = order['DeliveryStreetAddress2'] // : null,
+  let customerGuid = order["Customer"]["Guid"];
+  let deliveryContact = order["DeliveryContact"];
 
-    let suburb = order['DeliverySuburb'] // : 'Port Melbourne',
-    let city = order['DeliveryCity'] // : 'Port Melbourne',
-    let deliverySuburb = (suburb !== null) ? suburb : city
+  if (deliveryContact !== null) {
+    let contactGuid = order["DeliveryContact"]["Guid"];
+    let contact = await getContact(customerGuid, contactGuid);
 
-    let deliveryState = order['DeliveryRegion'] // : 'Victoria',
-    let deliveryPostCode = order['DeliveryPostCode'] // : '3207',
-    let deliveryCountry = order['DeliveryCountry'] // : 'Australia',
+    contactFirstName = contact.firstName;
+    contactLastName = contact.lastName;
+    contactMobilePhone = contact.mobilePhone;
+    contactPhoneNumber = contact.phoneNumber;
+    contactEmailAddress = contact.emailAddress;
+  }
 
-    let subTotal = order['SubTotal'] //: 338.37,
+  let contactFullName = `${contactFirstName} ${contactLastName}`
+    .replace("null", "")
+    .trim();
+  let contactPrimaryPhone =
+    contactMobilePhone !== null
+      ? contactMobilePhone
+      : contactPhoneNumber !== null
+      ? contactPhoneNumber
+      : // : (contactOfficePhone !== null)
+        //     ? contactOfficePhone
+        "";
 
+  //
 
-    // 
-    let data = { ...defaultData }
+  let deliveryStreetAddress = order["DeliveryStreetAddress"]; // : '4 / 273 Williamstown Rd',
+  let deliveryStreetAddress2 = order["DeliveryStreetAddress2"]; // : null,
 
-    let salesPerson = order['SalesPerson']
-    if (salesPerson!==null) {
-        data['salesPersonFullName'] = salesPerson['FullName'] // : 'Andrew Wilson',
-        data['salesPersonEmail'] = salesPerson['Email'] // 'andrew@dpasolar.com.au',
-    }
+  let suburb = order["DeliverySuburb"]; // : 'Port Melbourne',
+  let city = order["DeliveryCity"]; // : 'Port Melbourne',
+  let deliverySuburb = suburb !== null ? suburb : city;
 
-    data['requireResidential'] = false;
-    data['requireTailGate'] = false;
-    data['requireSignature'] = true;
+  let deliveryState = order["DeliveryRegion"]; // : 'Victoria',
+  let deliveryPostCode = order["DeliveryPostCode"]; // : '3207',
+  let deliveryCountry = order["DeliveryCountry"]; // : 'Australia',
 
-    data['shipmentNumber'] = shipmentNumber;
-    data['orderNumber'] = orderNumber;
-    data['productLines'] = productLines;
-    data['shipmentWeight'] = shipmentWeight;
-    data['shipmentVolume'] = shipmentVolume;
-    data['companyName'] = companyName;
-    data['customerRef'] = customerRef;
-    data['comments'] = comments;
-    data['contactFullName'] = contactFullName;
-    data['contactEmailAddress'] = contactEmailAddress;
-    data['contactPhoneNumber'] = contactPhoneNumber;
-    data['contactMobilePhone'] = contactMobilePhone;
-    // data['contactOfficePhone'] = contactOfficePhone;
-    data['contactPrimaryPhone'] = contactPrimaryPhone;
-    data['deliveryMethod'] = deliveryMethod;
-    data['deliveryInstruction'] = deliveryInstruction;
-    data['deliveryStreetAddress'] = deliveryStreetAddress;
-    data['deliveryStreetAddress2'] = deliveryStreetAddress2;
-    data['deliverySuburb'] = deliverySuburb;
-    data['deliveryState'] = deliveryState;
-    data['deliveryPostCode'] = deliveryPostCode;
-    data['deliveryCountry'] = deliveryCountry;
-    data['canShip'] = canShip;
-    data['canStarShipIt'] = canStarShipIt;
-    data['subTotal'] = subTotal;
-    data['freightCharge'] = freightCharge;
+  let subTotal = order["SubTotal"]; //: 338.37,
 
-    data['signatureRequired'] = true;
-    data['offers'] = []
+  //
+  let data = { ...defaultData };
 
-    // console.log({ finalData: data })
-    // console.log({ productLines: data.productLines })
-    // console.log('\n\n')
+  let salesPerson = order["SalesPerson"];
+  if (salesPerson !== null) {
+    data["salesPersonFullName"] = salesPerson["FullName"]; // : 'Andrew Wilson',
+    data["salesPersonEmail"] = salesPerson["Email"]; // 'andrew@dpasolar.com.au',
+  }
 
-    return data
-}
+  data["requireResidential"] = false;
+  data["requireTailGate"] = false;
+  data["requireSignature"] = true;
 
+  data["shipmentNumber"] = shipmentNumber;
+  data["orderNumber"] = orderNumber;
+  data["productLines"] = productLines;
+  data["shipmentWeight"] = shipmentWeight;
+  data["shipmentVolume"] = shipmentVolume;
+  data["companyName"] = companyName;
+  data["customerRef"] = customerRef;
+  data["comments"] = comments;
+  data["contactFullName"] = contactFullName;
+  data["contactEmailAddress"] = contactEmailAddress;
+  data["contactPhoneNumber"] = contactPhoneNumber;
+  data["contactMobilePhone"] = contactMobilePhone;
+  // data['contactOfficePhone'] = contactOfficePhone;
+  data["contactPrimaryPhone"] = contactPrimaryPhone;
+  data["deliveryMethod"] = deliveryMethod;
+  data["deliveryInstruction"] = deliveryInstruction;
+  data["deliveryStreetAddress"] = deliveryStreetAddress;
+  data["deliveryStreetAddress2"] = deliveryStreetAddress2;
+  data["deliverySuburb"] = deliverySuburb;
+  data["deliveryState"] = deliveryState;
+  data["deliveryPostCode"] = deliveryPostCode;
+  data["deliveryCountry"] = deliveryCountry;
+  data["canShip"] = canShip;
+  data["canStarShipIt"] = canStarShipIt;
+  data["subTotal"] = subTotal;
+  data["freightCharge"] = freightCharge;
 
+  data["signatureRequired"] = true;
+  data["offers"] = [];
 
+  // console.log({ finalData: data })
+  // console.log({ productLines: data.productLines })
+  // console.log('\n\n')
 
+  return data;
+};
 
 // const getShipments = async () => {
 //     const endpoint = 'SalesShipments'
 //     const body = { 'ShipmentStatus': 'Placed' }
 //     let shipments = await getResponse(endpoint, body)
-//     
+//
 //     let shipmentItems = shipments['Items']
 //     let dataArray = [];
-//     
+//
 //     for (let i=0;i<shipmentItems.length; i++) {
 //         let shipment= shipmentItems[i]
 //         let data = await getShipmentData(shipment)
@@ -628,10 +632,9 @@ const getShipmentData = async (shipment)  => {
 //     return dataArray;
 // }
 
-
 module.exports = {
-    getProductLines,
-    getQuoteData,
-    getOrderData,
-    getShipmentData
-}
+  getProductLines,
+  getQuoteData,
+  getOrderData,
+  getShipmentData,
+};
